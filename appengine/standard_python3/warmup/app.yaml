@@ -1,0 +1,4 @@
+runtime: python39
+
+inbound_services:
+- warmup
