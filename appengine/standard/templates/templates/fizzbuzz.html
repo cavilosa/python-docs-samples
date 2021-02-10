@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>FizzBuzz</h1>
+<form>
+    <input type="text" name="n">
+    <button>FizzBuzz</button>
+    {% if n %}
+        <input type="hidden" name="n" value="{{n}}">
+      <ul>
+        {% for x in range(1, n+1) %}
+        <li>
+            {% if x % 15 == 0%}
+                FizzBuzz
+            {% elif x % 3 ==0 %}
+                Fizz
+            {% elif x % 5 == 0 %}
+                Buzz
+            {% else %}
+                {{x}}
+            {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+</form>
+{% endif %}
+{% endblock %}
