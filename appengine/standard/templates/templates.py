@@ -92,66 +92,39 @@ class SignUpHandler(Handler):
         self.write_form()
 
     def post(self):
+        have_error = False
         username = self.request.get("username")
         password = self.request.get("password")
         verify = self.request.get("verify")
         email = self.request.get("email")
 
+        params = dict(username=username, email=email)
+
         username = validateName(username)
         password = validateName(password)
         verify = validatePasswordIdentical(password, verify)
-        email = validateEmail(email)
+
+        if email !="":
+            email = validateEmail(email)
 
         if username == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            errorName = "That is not a valid username"
-            self.render("signup.html", errorName = errorName,
-                    username = username, email = email)
-        elif password == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            PasswordError = "That wasn't a valid password"
-            self.render("signup.html", username = username, email = email,
-                                       PasswordError = PasswordError)
-        elif verify == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            VerifyError = "Your passwords didn't match."
-            self.render("signup.html", username = username, email = email,
-                                       VerifyError = VerifyError)
-        elif username == "error" and password == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            errorName = "That is not a valid username."
-            PasswordError = "The password is invalid."
-            self.render("signup.html", errorName = errorName,
-                    username = username, PasswordError = PasswordError,
-                    email = email)
-        elif username == "error" and password == "error" and verify == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            errorName = "That is not a valid username."
-            PasswordError = "The password is invalid."
-            VerifyError = "Your passwords didn't match."
-            self.render("signup.html", errorName = errorName,
-                    username = username, PasswordError = PasswordError,
-                    email = email, VerifyError = VerifyError)
-        elif password == "error" and verify == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            PasswordError = "The password is invalid."
-            VerifyError = "Your passwords didn't match."
-            self.render("signup.html", username = username,
-                        PasswordError = PasswordError, email = email,
-                        VerifyError = VerifyError)
-        elif email == "error":
-            email = self.request.get("email")
-            username = self.request.get("username")
-            EmailError = "That's not a valid email."
-            self.render("signup.html", username = username, email = email,
-                        EmailError = EmailError)
+            params["errorName"] = "That is not a valid username"
+            have_error = True
 
+        if password == "error":
+            params["PasswordError"] =  "That wasn't a valid password"
+            have_error = True
+
+        if verify == "error":
+            params["VerifyError"] = "Your passwords didn't match."
+            have_error = True
+
+        if email == "error":
+            params["EmailError"] = "That's not a valid email."
+            have_error = True
+
+        if have_error:
+            self.render("signup.html", **params)
         else:
             path = "/welcome?username=" + escape_html(username)
             self.redirect(path)
