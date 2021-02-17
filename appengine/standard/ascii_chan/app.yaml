@@ -1,0 +1,12 @@
+runtime: python27
+api_version: 1
+threadsafe: True
+
+handlers:
+- url: /.*
+  script: templates.app
+
+
+libraries:
+- name: jinja2
+  version: latest
