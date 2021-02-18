@@ -37,23 +37,26 @@ class SubmittedPost(Handler):
 
 
 class NewPostHandler(Handler):
-    def get(self, subject="", content="", error="", id=""):
-        self.render("newpost.html")
+    def render_front(self, subject="", content="", error="", id=""):
+        self.render("newpost.html", subject=subject, content = content,
+                    error = error, id = id)
+
+    def get(self):
+        self.render_front()
 
     def post(self):
-        #have_error = False
+        have_error = False
         subject = self.request.get("subject")
         content = self.request.get("content")
 
-
-        if subject and content:
+        if content and subject:
             p = NewPost(subject=subject, content=content)
             p.put()
-            #id = 123
             id = p.key()
-            #self.render("permalink.html", id = id)
             self.redirect("/blog/%s" % id)
-
+        else:
+            error = "title and content should be present"
+            self.render_front(subject, content, error)
 
 app = webapp2.WSGIApplication( [("/blog", MainPage),
                                 ("/blog/newpost", NewPostHandler),
