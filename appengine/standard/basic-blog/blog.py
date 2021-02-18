@@ -32,8 +32,13 @@ class NewPost(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
 class MainPage(Handler):
+    def render_blog(self, subject="", content=""):
+        posts = db.GqlQuery("SELECT * FROM NewPost "
+                            "ORDER BY created DESC")
+        self.render("blog.html", subject = subject, content = content, posts=posts)
+
     def get(self):
-        self.render("blog.html")
+        self.render_blog()
 
 
 class SubmittedPost(Handler):
