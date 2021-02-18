@@ -7,6 +7,29 @@
     </head>
     <body>
         <h1>new post</h1>
+        {{id}}
+        <form method="post">
+            <label>
+                <div class="title">
+                   Title
+                </div>
+                <input type="text" id="title" name="subject" value ={{subject}}>
+            </label>
 
+            <label>
+                <div class="post">
+                    Post
+                </div>
+                <textarea id="post" name="content" rows="8" cols="80"
+                        value="{{content}}"></textarea>
+            </label>
+
+            <div class="error">
+                {{error}}
+            </div>
+
+        <input type="submit" id="submit" value="Submit">
+
+        </form>
     </body>
 </html>

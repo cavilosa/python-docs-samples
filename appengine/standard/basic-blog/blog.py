@@ -20,16 +20,42 @@ class Handler(webapp2.RequestHandler):
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
 
+
+class NewPost(db.Model):
+    subject = db.StringProperty(required=True)
+    content = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add = True)
+
 class MainPage(Handler):
     def get(self):
         self.render("blog.html")
 
 
+class SubmittedPost(Handler):
+    def get(self, id="", subject="", content=""):
+        self.render("permalink.html")
+
+
 class NewPostHandler(Handler):
-    def get(self):
+    def get(self, subject="", content="", error="", id=""):
         self.render("newpost.html")
 
+    def post(self):
+        #have_error = False
+        subject = self.request.get("subject")
+        content = self.request.get("content")
 
-app = webapp2.WSGIApplication( [("/", MainPage),
-                                ("/newpost", NewPostHandler)
+
+        if subject and content:
+            p = NewPost(subject=subject, content=content)
+            p.put()
+            #id = 123
+            id = p.key()
+            #self.render("permalink.html", id = id)
+            self.redirect("/blog/%s" % id)
+
+
+app = webapp2.WSGIApplication( [("/blog", MainPage),
+                                ("/blog/newpost", NewPostHandler),
+                                ("/blog/([A-Za-z0-9-]+)", SubmittedPost )
                                 ], debug = True)
