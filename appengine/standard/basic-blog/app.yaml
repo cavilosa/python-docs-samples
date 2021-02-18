@@ -10,6 +10,9 @@ handlers:
 - url: /css
   static_dir: templates/css
 
+- url: /js
+  static_dir: templates/js
+
 - url: /(.*)
   static_files: www/\1
   upload: www/(.*)
