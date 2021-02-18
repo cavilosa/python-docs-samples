@@ -1,6 +1,8 @@
 import os
 import webapp2
 import jinja2
+import cgi
+import re
 
 from google.appengine.ext import db
 
@@ -8,6 +10,9 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
                                autoescape = True)
 
+
+def escape_html(s):
+    return cgi.escape(s, quote = True)
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -32,8 +37,11 @@ class MainPage(Handler):
 
 
 class SubmittedPost(Handler):
-    def get(self, id="", subject="", content=""):
-        self.render("permalink.html")
+    def get(self, id, subject="", content=""):
+
+        key = NewPost.get_by_id(int(id))
+
+        self.render("permalink.html", subject = key.subject, content = key.content)
 
 
 class NewPostHandler(Handler):
@@ -52,7 +60,8 @@ class NewPostHandler(Handler):
         if content and subject:
             p = NewPost(subject=subject, content=content)
             p.put()
-            id = p.key()
+            id = int(p.key().id())
+            post = NewPost.get_by_id(id)
             self.redirect("/blog/%s" % id)
         else:
             error = "title and content should be present"
