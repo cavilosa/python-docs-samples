@@ -1,11 +1,18 @@
 runtime: python27
 api_version: 1
-threadsafe: True
+threadsafe: true
 
 handlers:
-- url: /.*
-  script: blog.app
+- url: /
+  static_files: templates/blog.html
+  upload: templates/blog.html
 
+- url: /css
+  static_dir: templates/css
+
+- url: /(.*)
+  static_files: www/\1
+  upload: www/(.*)
 
 libraries:
 - name: jinja2
