@@ -36,6 +36,7 @@ class MainPage(Handler):
     def render_blog(self, subject="", content=""):
         posts = db.GqlQuery("SELECT * FROM NewPost "
                             "ORDER BY created DESC")
+        # post = NewPost.all().order("-created") limit 10 same as above woth limit of 10 posts
         self.render("blog.html", subject = subject, content = content, posts=posts)
 
     def get(self):
@@ -46,6 +47,10 @@ class SubmittedPost(Handler):
     def get(self, id, subject="", content="", date = ""):
 
         key = NewPost.get_by_id(int(id))
+
+        if not key:
+            self.error(404)
+            return
 
         self.render("permalink.html", subject = key.subject,
                     content = key.content, date = key.created)
@@ -72,7 +77,7 @@ class NewPostHandler(Handler):
             error = "title and content should be present"
             self.render_front(subject, content, error)
 
-app = webapp2.WSGIApplication( [("/blog", MainPage),
+app = webapp2.WSGIApplication( [("/blog/?", MainPage),
                                 ("/blog/newpost", NewPostHandler),
                                 ("/blog/([A-Za-z0-9-]+)", SubmittedPost )
                                 ], debug = True)
