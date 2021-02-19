@@ -3,14 +3,20 @@
     <head>
         <meta charset="utf-8">
         <title>Post</title>
+        <link rel="stylesheet" type="text/css" href="/css/style.css" />
     </head>
     <body>
         <h1 class="paragraph">POST</h1>
         <button type="button" id="button-return" name="button">Home Page</button>
         <hr>
-        <div class="subject" name="subject">
-            {{subject}}
-        </div>
+        <article>
+            <div class="subject" name="subject">
+                {{subject}}
+            </div>
+            <div class="date" name="date">
+                {{date}}
+            </div>
+        </article>
         <div class="content" name="content">
              {{content}}
         </div>

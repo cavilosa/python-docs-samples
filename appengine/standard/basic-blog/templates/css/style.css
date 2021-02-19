@@ -1,10 +1,12 @@
 body {
-    padding: 10px;
+    padding: 20px;
     margin: 10px;
+    max-width: 100vw;
 }
 
 h1 {
     color: blue;
+    text-align: center;
 }
 
 form {
@@ -33,4 +35,16 @@ input#submit {
     margin-left: 100px;
     max-width: 20vw;
     border-radius: 30px;
+}
+
+section {
+    padding: 20px;
+    margin-left: 10px;
+    margin-right: 20px;
+}
+
+article {
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
 }

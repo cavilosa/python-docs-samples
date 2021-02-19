@@ -4,6 +4,7 @@ import jinja2
 import cgi
 import re
 
+
 from google.appengine.ext import db
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -42,11 +43,12 @@ class MainPage(Handler):
 
 
 class SubmittedPost(Handler):
-    def get(self, id, subject="", content=""):
+    def get(self, id, subject="", content="", date = ""):
 
         key = NewPost.get_by_id(int(id))
 
-        self.render("permalink.html", subject = key.subject, content = key.content)
+        self.render("permalink.html", subject = key.subject,
+                    content = key.content, date = key.created)
 
 
 class NewPostHandler(Handler):
@@ -58,11 +60,9 @@ class NewPostHandler(Handler):
         self.render_front()
 
     def post(self):
-        have_error = False
         subject = self.request.get("subject")
         content = self.request.get("content")
-
-        if content and subject:
+        if content and not content.isspace() and subject and not subject.isspace():
             p = NewPost(subject=subject, content=content)
             p.put()
             id = int(p.key().id())

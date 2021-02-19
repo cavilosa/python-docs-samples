@@ -6,17 +6,22 @@
     </head>
     <body>
         <h1>Basic Blog</h1>
-        <button type="submit" id="newPost" >new post</button>
+        <button type="submit" id="newPost">new post</button>
         {% for post in posts %}
-            <div class="subject">
-                {{post.subject}}
-            </div>
-            <div class="date">
-                {{post.created}}
-            </div>
-            <div class="content">
-                {{post.content}}
-            </div>
+            <section>
+                <article>
+                    <div class="subject">
+                        {{post.subject}}
+                    </div>
+                    <div class="date">
+                        {{post.created}}
+                    </div>
+                </article>
+                <div class="content">
+                    {{post.content}}
+                </div>
+            </section>
+            <hr>
         {% endfor %}
     </body>
     <script type="text/javascript" src="/js/script.js">
