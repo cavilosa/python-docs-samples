@@ -1,11 +1,14 @@
 import os
-
+import random
+import string
+import hashlib
 import jinja2
 import webapp2
 import codecs
 import cgi
 import re
-#import asyncio
+from google.appengine.ext import db
+
 
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
@@ -14,6 +17,19 @@ jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
 
 def escape_html(s):
     return cgi.escape(s, quote = True)
+
+def make_salt():
+    return ''.join(random.choice(string.letters) for x in xrange(5))
+
+def make_pw_hash(name, pw, salt=None):
+    if not salt:
+        salt = make_salt()
+    h = hashlib.sha256(name + pw + salt).hexdigest()
+    return '%s,%s' % (h, salt)
+
+def valid_pw(name, pw, h):
+    salt = h.split(",")[1]
+    return h == make_pw_hash(name, pw, salt)
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -84,6 +100,12 @@ def validateEmail(email):
         email = "error"
         return email
 
+class Cookies(db.Model):
+    username = db.StringProperty(required = True)
+    h = db.StringProperty(required = True)
+    email = db.StringProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
+
 class SignUpHandler(Handler):
     def write_form(self, errorName="", PasswordError="", EmailError=""):
         self.render("signup.html")
@@ -98,13 +120,19 @@ class SignUpHandler(Handler):
         verify = self.request.get("verify")
         email = self.request.get("email")
 
+        #username = self.request.cookies.get("name")
+        #email = self.request.get("email")
+        #password = self.request.cookies.get("password")
+
+        check_name = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
+
         params = dict(username=username, email=email)
 
         username = validateName(username)
         password = validateName(password)
         verify = validatePasswordIdentical(password, verify)
 
-        if email !="":
+        if email:
             email = validateEmail(email)
 
         if username == "error":
@@ -126,14 +154,44 @@ class SignUpHandler(Handler):
         if have_error:
             self.render("signup.html", **params)
         else:
-            path = "/welcome?username=" + escape_html(username)
-            self.redirect(path)
+            username = username.encode("ascii", "ignore")
+            password = password.encode("ascii", "ignore")
+            h = make_pw_hash(username, password, salt=None)
+
+            if email != "":
+                email = email
+            else:
+                email = " "
+
+            p = Cookies(username = username, h=h, email = email)
+            p.put()
+            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/; password=%s'
+                                           % (username, password))
+            self.redirect("/welcome")
 
 
 class WelcomeHandler(Handler):
     def get(self):
-        username = self.request.get("username")
-        self.render("welcome.html", username = username)
+        username = self.request.cookies.get("name")
+        email = self.request.get("email")
+        password = self.request.cookies.get("password")
+        check_name = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
+        for name in check_name:
+            if name == username:
+            #params = dict(username=username, email=email)
+            #params["errorName"] = "The username %s is already in use" % name.username
+            #params["errorName"] = "The username is already in use"
+                self.redirect("/signup")
+        else:
+            self.render("welcome.html", username = username)
+        #for name in check_name:
+        #    if name.username == username:
+        #        params = dict(username=username, email=email)
+        #        params["errorName"] = "That is not a valid username"
+        #        self.render("signup.html", **params)
+        #    else:
+        #        self.render("welcome.html")
+        #        #name.delete()
 
 
 app = webapp2.WSGIApplication( [("/", MainPage),
