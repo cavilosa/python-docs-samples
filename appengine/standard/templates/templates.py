@@ -164,18 +164,18 @@ class SignUpHandler(Handler):
                     params["errorName"] = "This username is in use"
                 self.render("signup.html", **params)
 
-            else:
+            p = Cookies(username = username,  email = email)
+            p.put()
+            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/'
+                                       % username)
+            self.redirect("/welcome")
                     #h_pw = make_pw_hash(username, password, salt=None)  h = h_pw,
-                p = Cookies(username = username,  email = email)
-                p.put()
-                self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/; password=%s'
-                                           % (username, password))
-                self.redirect("/welcome")
+
 
 
 class WelcomeHandler(Handler):
     def get(self):
-        username = self.request.cookie.get("name")
+        username = self.request.cookies.get("name")
         self.render("welcome.html", username = username)
 
 
