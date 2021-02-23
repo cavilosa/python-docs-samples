@@ -159,11 +159,11 @@ class SignUpHandler(Handler):
                 email = " "
 
             check_name = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
-            for name in check_name:
-                if name.username == username:
-                    params["errorName"] = "This username is in use"
-                    self.render("signup.html", **params)
-                else:
+            if check_name:
+                params["errorName"] = "This username is in use"
+                self.render("signup.html", **params)
+
+            else:
                     #h_pw = make_pw_hash(username, password, salt=None)  h = h_pw,
                     p = Cookies(username = username,  email = email)
                     p.put()
