@@ -30,6 +30,9 @@ class Handler(webapp2.RequestHandler):
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
 
+
+
+
 class MainPage(Handler):
     def get(self):
         # gets items out of url
@@ -95,7 +98,7 @@ def make_pw_hash(name, pw, salt=None):
     if not salt:
         salt = make_salt()
     h = hashlib.sha256(name + pw + salt).hexdigest()
-    return '%s,%s' % (h, salt)
+    return '%s' % (h)
 
 def valid_pw(name, pw, h):
     salt = h.split(",")[1]
@@ -116,66 +119,75 @@ class SignUpHandler(Handler):
 
     def post(self):
         have_error = False
-        username = self.request.get("username")
-        password = self.request.get("password")
-        verify = self.request.get("verify")
-        email = self.request.get("email")
+        self.username = self.request.get("username")
+        self.password = self.request.get("password")
+        self.verify = self.request.get("verify")
+        self.email = self.request.get("email")
 
-        username = validateName(username)
-        password = validateName(password)
-        verify = validatePasswordIdentical(password, verify)
+        self.username = validateName(self.username)
+        self.password = validateName(self.password)
+        self.verify = validatePasswordIdentical(self.password, self.verify)
 
-        if email:
-            email = validateEmail(email)
+        if self.email:
+            self.email = validateEmail(self.email)
 
-        params = dict(username=username, email=email)
+        params = dict(username=self.username, email=self.email)
 
-        if username == "error":
+        if self.username == "error":
             params["errorName"] = "That is not a valid username"
             have_error = True
 
-        if password == "error":
+        if self.password == "error":
             params["PasswordError"] =  "That wasn't a valid password"
             have_error = True
 
-        if verify == "error":
+        if self.verify == "error":
             params["VerifyError"] = "Your passwords didn't match."
             have_error = True
 
-        if email == "error":
+        if self.email == "error":
             params["EmailError"] = "That's not a valid email."
             have_error = True
 
         if have_error:
             self.render("signup.html", **params)
         else:
-            username = username.encode("ascii", "ignore")
-            password = password.encode("ascii", "ignore")
-            #h = make_pw_hash(username, password, salt=None)
+            self.username = username.encode("ascii", "ignore")
+            self.password = password.encode("ascii", "ignore")
+
 
             if email != "":
                 email = email
             else:
                 email = " "
 
-            check_name = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
-            if check_name:
-                for name in check_name:
+            q = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
+            for name in q.run(limit=1):
+                if name.username == username:
                     params["errorName"] = "This username is in use"
-                self.render("signup.html", **params)
+                    self.render("signup.html", **params)
 
             p = Cookies(username = username,  email = email)
             p.put()
-            self.response.headers.add_header('Set-Cookie', 'name=%s; Path=/'
-                                       % username)
+
+            id = p.key().id()
+            h = make_pw_hash(username, password, salt="salt")
+            info = "%s|%s" % (id, h)
+
+            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                                       % info)
             self.redirect("/welcome")
-                    #h_pw = make_pw_hash(username, password, salt=None)  h = h_pw,
 
 
 
 class WelcomeHandler(Handler):
     def get(self):
-        username = self.request.cookies.get("name")
+        user_id = self.request.cookies.get("user_id")
+        id = user_id.split("|")[0]
+        h = user_id.split("|")[1]
+
+        name = Cookies.get_by_id(id)
+
         self.render("welcome.html", username = username)
 
 
