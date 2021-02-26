@@ -117,16 +117,16 @@ def make_pw_hash(name, pw, salt=None):
     if not salt:
         salt = make_salt()
     h = hashlib.sha256(name + pw + salt).hexdigest()
-    return '%s' % (h)
+    return '%s, %s' % (salt, h)
 
 def valid_pw(name, pw, h):
-    salt = h.split(",")[1]
+    salt = h.split(",")[0]
     return h == make_pw_hash(name, pw, salt)
 
 class Cookies(db.Model):
     username = db.StringProperty(required = True)
-    #h = db.StringProperty(required = True)
-    email = db.StringProperty(required = True)
+    pw_hash = db.StringProperty(required = True)
+    email = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add = True)
 
 class SignUpHandler(Handler):
