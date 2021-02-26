@@ -123,11 +123,26 @@ def valid_pw(name, pw, h):
     salt = h.split(",")[0]
     return h == make_pw_hash(name, pw, salt)
 
-class Cookies(db.Model):
+class User(db.Model):
     username = db.StringProperty(required = True)
     pw_hash = db.StringProperty(required = True)
     email = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add = True)
+
+    @classmethod
+    def by_id(cls, uid):
+        return User.get_by_id(uid)
+
+    @classmethod
+    def by_name(cls, name):
+        return User.all().filter("username=", name).get()
+
+    @classmethod
+    def register(cls, name, pw, email=None):
+        pw_hash = make_pw_hash(name, pw)
+        return User(username=username,
+                    pw_hash=pw_hash,
+                    email=email)
 
 class SignUpHandler(Handler):
     def write_form(self, errorName="", PasswordError="", EmailError=""):
@@ -171,31 +186,52 @@ class SignUpHandler(Handler):
         if have_error:
             self.render("signup.html", **params)
         else:
-            self.username = username.encode("ascii", "ignore")
-            self.password = password.encode("ascii", "ignore")
+
+            self.done()
+
+    def done(self, *a, **kw):
+            raise NotImplementedError
 
 
-            if email != "":
-                email = email
+    class Register(SignUpHandler):
+        def done(self):
+            u = User.by_name(self.username)
+            params = dict(username=self.username, email=self.email)
+            if u:
+                params["errorName"] = "This username is in use"
+                self.render("signup.html", **params)
             else:
-                email = " "
+                u = User.register(self.username, self.password, self.email)
+                u.put()
 
-            q = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
-            for name in q.run(limit=1):
-                if name.username == username:
-                    params["errorName"] = "This username is in use"
-                    self.render("signup.html", **params)
-
-            p = Cookies(username = username,  email = email)
-            p.put()
-
-            id = p.key().id()
-            h = make_pw_hash(username, password, salt="salt")
-            info = "%s|%s" % (id, h)
-
-            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
-                                       % info)
             self.redirect("/welcome")
+
+
+#            self.username = username.encode("ascii", "ignore")
+#            self.password = password.encode("ascii", "ignore")
+#
+#
+#            if email != "":
+#                email = email
+#            else:
+#                email = " "
+#
+#            q = db.GqlQuery("SELECT * FROM Cookies WHERE username='%s'" % username)
+#            for name in q.run(limit=1):
+#                if name.username == username:
+#                    params["errorName"] = "This username is in use"
+#                    self.render("signup.html", **params)
+#
+#            p = Cookies(username = username,  email = email)
+#            p.put()
+#
+#            id = p.key().id()
+#            h = make_pw_hash(username, password, salt="salt")
+#            info = "%s|%s" % (id, h)
+#
+#            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+#                                       % info)
+#            self.redirect("/welcome")
 
 
 
