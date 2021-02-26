@@ -8,7 +8,9 @@ import codecs
 import cgi
 import re
 from google.appengine.ext import db
+import hmac
 
+secret = "secret"
 
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
@@ -140,7 +142,7 @@ class User(db.Model):
     @classmethod
     def register(cls, name, pw, email=None):
         pw_hash = make_pw_hash(name, pw)
-        return User(username=username,
+        return User(username=name,
                     pw_hash=pw_hash,
                     email=email)
 
@@ -189,22 +191,43 @@ class SignUpHandler(Handler):
 
             self.done()
 
-    def done(self, *a, **kw):
-            raise NotImplementedError
+    def done(self):
+        u = User.by_name(self.username)
+        params = dict(username=self.username, email=self.email)
+        if u:
+            params["errorName"] = "This username is in use"
+            self.render("signup.html", **params)
+        else:
+            u = User.register(self.username, self.password, self.email)
+            u.put()
+            id = u.key().id()
+            id_hash = make_secure_val(str(id))
+
+            #cookie = "%s|%s" % (id, name_hash)
+        self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                                             % id_hash)
+
+        self.redirect("/welcome")
 
 
-    class Register(SignUpHandler):
-        def done(self):
-            u = User.by_name(self.username)
-            params = dict(username=self.username, email=self.email)
-            if u:
-                params["errorName"] = "This username is in use"
-                self.render("signup.html", **params)
-            else:
-                u = User.register(self.username, self.password, self.email)
-                u.put()
+class Register(SignUpHandler):
+    def done(self):
+        u = User.by_name(self.username)
+        params = dict(username=self.username, email=self.email)
+        if u:
+            params["errorName"] = "This username is in use"
+            self.render("signup.html", **params)
+        else:
+            u = User.register(self.username, self.password, self.email)
+            u.put()
 
-            self.redirect("/welcome")
+            name_hash = make_secure_val(self.username)
+            id = u.key().id()
+            cookie = "id|name_hash"
+        self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                                             % cookie)
+
+        self.redirect("/welcome")
 
 
 #            self.username = username.encode("ascii", "ignore")
@@ -241,9 +264,13 @@ class WelcomeHandler(Handler):
         id = user_id.split("|")[0]
         h = user_id.split("|")[1]
 
-        name = Cookies.get_by_id(id)
+        if check_secure_val(user_id):
+            name = User.get_by_id(int(id))
+            self.render("welcome.html", username = name.username)
+        else:
+            self.redirect("/signup")
 
-        self.render("welcome.html", username = username)
+
 
 
 
