@@ -137,7 +137,8 @@ class User(db.Model):
 
     @classmethod
     def by_name(cls, name):
-        return User.all().filter("username=", name).get()
+        u = User.all().filter("username=", name).get()
+        return u
 
     @classmethod
     def register(cls, name, pw, email=None):
@@ -192,7 +193,8 @@ class SignUpHandler(Handler):
             self.done()
 
     def done(self):
-        u = User.by_name(self.username)
+        #u = User.by_name(self.username)
+        u = db.GqlQuery("SELECT * FROM User WHERE username='%s'" % self.username)
         params = dict(username=self.username, email=self.email)
         if u:
             params["errorName"] = "This username is in use"
@@ -202,32 +204,29 @@ class SignUpHandler(Handler):
             u.put()
             id = u.key().id()
             id_hash = make_secure_val(str(id))
-
-            #cookie = "%s|%s" % (id, name_hash)
-        self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
-                                             % id_hash)
-
-        self.redirect("/welcome")
+            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                                                 % id_hash)
+            self.redirect("/welcome")
 
 
-class Register(SignUpHandler):
-    def done(self):
-        u = User.by_name(self.username)
-        params = dict(username=self.username, email=self.email)
-        if u:
-            params["errorName"] = "This username is in use"
-            self.render("signup.html", **params)
-        else:
-            u = User.register(self.username, self.password, self.email)
-            u.put()
-
-            name_hash = make_secure_val(self.username)
-            id = u.key().id()
-            cookie = "id|name_hash"
-        self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
-                                             % cookie)
-
-        self.redirect("/welcome")
+# class Register(SignUpHandler):
+#    def done(self):
+#        u = User.by_name(self.username)
+#        params = dict(username=self.username, email=self.email)
+#        if u:
+#            params["errorName"] = "This username is in use"
+#            self.render("signup.html", **params)
+#        else:
+#            u = User.register(self.username, self.password, self.email)
+#            u.put()
+#
+#            name_hash = make_secure_val(self.username)
+#            id = u.key().id()
+#            cookie = "id|name_hash"
+#        self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+#                                             % cookie)
+#
+#        self.redirect("/welcome")
 
 
 #            self.username = username.encode("ascii", "ignore")
