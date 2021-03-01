@@ -10,6 +10,7 @@ import re
 from google.appengine.ext import db
 import hmac
 
+
 secret = "secret"
 
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -53,6 +54,12 @@ class Handler(webapp2.RequestHandler):
         uid = self.read_secure_cookie("user_id")
         # reads the cookie, makes sure it is valid and sets user on the handler
         self.user = uid and User.by_id(int(uid))
+
+    def login(self, user):
+        self.set_secure_cookie("user_id", str(user.key().id()))
+
+    def logout(self):
+        self.response.headers.add_header("Set-Cookie", "user_id=; Path=/")
 
 class MainPage(Handler):
     def get(self):
@@ -189,10 +196,11 @@ class SignUpHandler(Handler):
             else:
                 u = User.register(self.username, self.password, self.email)
                 u.put()
-                id = u.key().id()
-                id_hash = make_secure_val(str(id))
-                self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
-                                                     % id_hash)
+                # id = u.key().id()
+                # id_hash = make_secure_val(str(id))
+                # self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                #                                      % id_hash)
+                self.login(u)
                 self.redirect("/welcome")
 
 class Login(Handler):
@@ -207,15 +215,15 @@ class Login(Handler):
         u.filter("username =", self.username)
         r = u.get()
         if r and valid_pw(self.username, self.password, r.pw_hash):
-            id = r.key().id()
-            id_hash = make_secure_val(str(id))
-            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
-                                                 % id_hash)
+            self.login(r)
             self.redirect("/welcome")
         else:
             self.render("login.html", error = "Invalid login")
 
-
+class Logout(Handler):
+    def get(self):
+        self.logout()
+        self.redirect("/signup")
 
 
 class WelcomeHandler(Handler):
@@ -237,5 +245,6 @@ app = webapp2.WSGIApplication( [("/", MainPage),
                                 ("/rot13", Rot13Handler),
                                 ("/signup", SignUpHandler),
                                 ("/welcome", WelcomeHandler),
-                                ("/login", Login)
+                                ("/login", Login),
+                                ("/logout", Logout)
                                 ], debug = True)
