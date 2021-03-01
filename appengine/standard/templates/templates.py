@@ -85,8 +85,6 @@ def validateName(username):
     if x:
         return username
 
-
-
 def validatePassword(password):
     x = re.search("^.{3,20}$", password)
     if x:
@@ -197,6 +195,27 @@ class SignUpHandler(Handler):
                                                      % id_hash)
                 self.redirect("/welcome")
 
+class Login(Handler):
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        self.username = self.request.get("username")
+        self.password = self.request.get("password")
+
+        u = User.all()
+        u.filter("username =", self.username)
+        r = u.get()
+        if r and valid_pw(self.username, self.password, r.pw_hash):
+            id = r.key().id()
+            id_hash = make_secure_val(str(id))
+            self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/'
+                                                 % id_hash)
+            self.redirect("/welcome")
+        else:
+            self.render("login.html", error = "Invalid login")
+
+
 
 
 class WelcomeHandler(Handler):
@@ -217,5 +236,6 @@ app = webapp2.WSGIApplication( [("/", MainPage),
                                 ("/fizzbuzz", FizzBuzzHandler),
                                 ("/rot13", Rot13Handler),
                                 ("/signup", SignUpHandler),
-                                ("/welcome", WelcomeHandler)
+                                ("/welcome", WelcomeHandler),
+                                ("/login", Login)
                                 ], debug = True)
