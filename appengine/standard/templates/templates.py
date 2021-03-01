@@ -84,33 +84,25 @@ def validateName(username):
     x = re.search("^[a-zA-Z0-9_-]{3,20}$", username)
     if x:
         return username
-    else:
-        errorName = "error"
-        return errorName
+
 
 
 def validatePassword(password):
     x = re.search("^.{3,20}$", password)
     if x:
         return password
-    else:
-        password = "error"
-        return password
+
 
 def validatePasswordIdentical(first, second):
     if first == second:
         return first, second
-    else:
-        identical = "error"
-        return identical
+
 
 def validateEmail(email):
     x = re.search("^[\S]+@[\S]+.[\S]+$", email)
     if x:
         return email
-    else:
-        email = "error"
-        return email
+
 
 def make_salt():
     return ''.join(random.choice(string.letters) for x in xrange(5))
@@ -167,23 +159,23 @@ class SignUpHandler(Handler):
 
         if self.email:
             self.email = validateEmail(self.email)
+            if not self.email:
+                params["EmailError"] = "That's not a valid email."
+                have_error = True
 
         params = dict(username=self.username, email=self.email)
 
-        if self.username == "error":
+        if not self.username:
             params["errorName"] = "That is not a valid username"
+            self.username = self.request.get("username")
             have_error = True
 
-        if self.password == "error":
+        if not self.password:
             params["PasswordError"] =  "That wasn't a valid password"
             have_error = True
 
-        if self.verify == "error":
+        if not self.verify:
             params["VerifyError"] = "Your passwords didn't match."
-            have_error = True
-
-        if self.email == "error":
-            params["EmailError"] = "That's not a valid email."
             have_error = True
 
         if have_error:
@@ -212,17 +204,12 @@ class WelcomeHandler(Handler):
         user_id = self.request.cookies.get("user_id")
         id = user_id.split("|")[0]
         h = user_id.split("|")[1]
-        q = db.GqlQuery("SELECT * FROM User")
-        usernames = [name.username for name in q]
-
 
         if check_secure_val(user_id):
             name = User.get_by_id(int(id))
-            self.render("welcome.html", username = name.username, usernames=usernames)
+            self.render("welcome.html", username = name.username)
         else:
             self.redirect("/signup")
-
-
 
 
 
