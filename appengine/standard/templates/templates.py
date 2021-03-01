@@ -229,12 +229,13 @@ class Logout(Handler):
 class WelcomeHandler(Handler):
     def get(self):
         user_id = self.request.cookies.get("user_id")
-        id = user_id.split("|")[0]
-        h = user_id.split("|")[1]
+        if user_id:
+            id = user_id.split("|")[0]
+            h = user_id.split("|")[1]
 
-        if check_secure_val(user_id):
-            name = User.get_by_id(int(id))
-            self.render("welcome.html", username = name.username)
+            if check_secure_val(user_id):
+                name = User.get_by_id(int(id))
+                self.render("welcome.html", username = name.username)
         else:
             self.redirect("/signup")
 
